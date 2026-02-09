@@ -94,8 +94,14 @@ class InsuranceClaim(models.Model):
 
     approved_amount = fields.Float(
         string='Approved Amount',
-        readonly=True,
         tracking=True,
+        readonly=True,
+        states={
+        'draft': [('readonly', False)],
+        'returned': [('readonly', False)],
+        },
+        default=0.0,
+
     )
     payment_id = fields.Many2one(
         'account.payment',
@@ -103,14 +109,7 @@ class InsuranceClaim(models.Model):
         readonly=True,
     )
 
-    payment_state = fields.Selection(
-        [
-            ('not_paid', 'Not Paid'),
-            ('paid', 'Paid'),
-        ],
-        default='not_paid',
-        tracking=True,
-    )
+    
 
     payee_type = fields.Selection(
         [
@@ -694,7 +693,8 @@ class InsuranceClaim(models.Model):
                 raise ValidationError(
                     "This claim is flagged for fraud review and cannot be approved."
                 )
-
+            # AUTO-CREATE ACCOUNTING ENTRY
+            rec._create_accounting_entry()
             # --------------------------------
             # ESCALATION AUTHORITY (SOURCE OF TRUTH)
             # --------------------------------
@@ -789,10 +789,7 @@ class InsuranceClaim(models.Model):
             # UTILIZATION
             # --------------------------------
             rec._update_coverage_utilization(insurer_share)
-            # -----------------------------
-            # AUTO PAYMENT
-            # -----------------------------
-            rec._create_payment()
+
     @api.model
     def create(self, vals_list):
         # Odoo may send a dict OR a list → normalize
@@ -806,41 +803,29 @@ class InsuranceClaim(models.Model):
                 ) or 'New'
 
         return super().create(vals_list)
+    # --------------------------------------------------
+    # JOURNAL HELPER
+    # --------------------------------------------------
+    def _get_journal(self, journal_type):
+        """
+        Safely fetch an accounting journal for the claim's company
+        """
+        self.ensure_one()
 
+        journal = self.env['account.journal'].search([
+            ('type', '=', journal_type),
+            ('company_id', '=', self.company_id.id),
+        ], limit=1)
 
-    # -------------------------------------------------
-    # CREATE PAYMENT AUTOMATICALLY
-    # -------------------------------------------------
-    def _create_payment(self):
-        for rec in self:
-            if rec.payment_id:
-                continue  # already paid / created
-            if rec.payment_state == 'paid':
-                raise ValidationError("This claim has already been paid.")
+        if not journal:
+            raise ValidationError(
+                f"No {journal_type} journal configured for company "
+                f"{self.company_id.name}"
+            )
 
-            partner = rec._get_payee_partner()
-            if not partner:
-                raise ValidationError("No partner found for payment.")
-            journal = rec.company_id.insurance_payment_journal_id
-            if not journal:
-                raise ValidationError(
-                    "Please configure an Insurance Payment Journal on the company."
-                )
-            payment = self.env['account.payment'].create({
-                'payment_type': 'outbound',
-                'partner_type': 'supplier',
-                'partner_id': partner.id,
-                'amount': rec.approved_amount,
-                'currency_id': rec.company_id.currency_id.id,
-                'journal_id': journal.id,
-                'date': fields.Date.context_today(self),
-                'name': f'Insurance Claim {rec.display_name}',
-            })
+        return journal
 
-            payment.action_post()
-
-            rec.payment_id = payment.id
-            rec.payment_state = 'paid'
+   
 
     def _get_payee_partner(self):
         self.ensure_one()
@@ -859,11 +844,101 @@ class InsuranceClaim(models.Model):
                 )
             return self.member_id.partner_id
 
+    # -----------------------------
+    # MAIN ENTRY POINT (BUTTON)
+    # -----------------------------
+    payment_move_id = fields.Many2one(
+        'account.move',
+        string='Accounting Entry',
+        readonly=True
+    )
+    payment_state = fields.Selection(
+        [('not_paid', 'Not Paid'), ('paid', 'Paid')],
+        default='not_paid',
+        tracking=True
+    )
+
+   
     def action_create_payment(self):
-        for rec in self:
-            if rec.state != 'approved':
-                raise ValidationError("Claim must be approved first.")
-            rec._create_payment()
+        self.ensure_one()
+
+        if not self.payment_move_id:
+            raise ValidationError("No accounting document exists for this claim.")
+
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'account.move',
+            'res_id': self.payment_move_id.id,
+            'view_mode': 'form',
+        }
+
+    def _create_accounting_entry(self):
+        self.ensure_one()
+
+        if not self.approved_amount or self.approved_amount <= 0:
+            raise ValidationError("Approved amount must be greater than zero.")
+
+        # -----------------------------
+        # PROVIDER PAYMENT
+        # -----------------------------
+        if self.payee_type == 'provider':
+            partner = self.provider_id.partner_id
+            move_type = 'in_invoice'  # Vendor Bill
+
+            account = (
+                self.provider_id.expense_account_id
+                or self.company_id.insurance_claim_expense_account_id
+            )
+
+            if not account:
+                raise ValidationError(
+                    "No expense account found. "
+                    "Please configure an expense account on the provider "
+                    "or a default one on the company."
+                )
+
+            line_account = account.id
+
+
+        # -----------------------------
+        # MEMBER PAYMENT
+        # -----------------------------
+        else:
+            partner = self.member_id.partner_id
+            move_type = 'out_refund'  # Customer Refund
+
+            if not partner:
+                raise ValidationError(
+                    "Member has no accounting partner configured."
+                )
+
+            if not self.company_id.expense_account_id:
+                raise ValidationError(
+                    "Company expense account is not configured."
+                )
+
+            line_account = self.company_id.expense_account_id.id
+
+        # -----------------------------
+        # CREATE ACCOUNT MOVE
+        # -----------------------------
+        move = self.env['account.move'].create({
+            'move_type': move_type,
+            'partner_id': partner.id,
+            'invoice_date': fields.Date.today(),
+            'ref': f'Claim {self.name}',
+            'invoice_line_ids': [(0, 0, {
+                'name': f'Insurance Claim {self.name}',
+                'quantity': 1,
+                'price_unit': self.approved_amount,
+                'account_id': line_account,
+            })],
+        })
+
+        move.action_post()
+        return move
+
+
 
     def action_committee_approve(self):
         for rec in self:

@@ -148,22 +148,18 @@
                         <h2>Policy Exclusions</h2>
 
                         <p>
-                            The following services are excluded from coverage unless explicitly stated otherwise:
+        The following services are excluded from coverage unless explicitly stated otherwise:
                         </p>
 
-                        <!-- DERIVE EXCLUSIONS FROM COVERAGE LINES -->
-                        <t t-set="excluded_lines" t-value="doc.policy_id.coverage_line_ids.filtered(lambda l: not l.covered)"/>
-
                         <ul style="margin-top:20px;">
-                            <t t-if="excluded_lines">
-                                <t t-foreach="excluded_lines" t-as="line">
-                                    <li>
-                                        <t t-esc="line.service_id.name"/>
-                                    </li>
-                                </t>
+                            <t t-foreach="doc.policy_id.coverage_line_ids.filtered(lambda l: not l.covered)" t-as="line">
+                                <li>
+                                    <t t-esc="line.service_id.name"/>
+                                </li>
                             </t>
-                            <t t-else="">
-                                <li>No specific exclusions apply.</li>
+
+                            <t t-if="not doc.policy_id.coverage_line_ids.filtered(lambda l: not l.covered)">
+                                <li>No explicit exclusions apply.</li>
                             </t>
                         </ul>
 

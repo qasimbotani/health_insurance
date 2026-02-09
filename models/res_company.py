@@ -9,3 +9,8 @@ class ResCompany(models.Model):
         domain="[('type', 'in', ('bank', 'cash'))]",
         help='Journal used to pay insurance claims',
     )
+    insurance_claim_expense_account_id = fields.Many2one(
+            'account.account',
+            string='Default Insurance Claim Expense Account',
+            domain=[('account_type', '=', 'expense')],
+        )

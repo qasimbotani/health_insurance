@@ -17,6 +17,14 @@ class InsuranceProvider(models.Model):
             required=True,
             help='Partner used for payments and accounting'
         )
+    expense_account_id = fields.Many2one(
+        'account.account',
+        string='Expense Account',
+        required=True,
+        domain="[('account_type', '=', 'expense')]",
+        help="Expense account used when paying this provider"
+    )
+
     @api.depends()
     def _compute_total_paid(self):
         for rec in self:

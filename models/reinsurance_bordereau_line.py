@@ -7,6 +7,9 @@ class ReinsuranceBordereauLine(models.Model):
     _description = 'Reinsurance Bordereau Line'
     _order = 'loss_date'
 
+    # -------------------------------------------------
+    # RELATIONSHIPS
+    # -------------------------------------------------
     bordereau_id = fields.Many2one(
         'insurance.reinsurance.bordereau',
         required=True,
@@ -19,49 +22,76 @@ class ReinsuranceBordereauLine(models.Model):
         ondelete='restrict'
     )
 
-    # ------------------------
-    # SNAPSHOT FIELDS
-    # ------------------------
+    # -------------------------------------------------
+    # SNAPSHOT FIELDS (REAL SNAPSHOT, NOT RELATED)
+    # -------------------------------------------------
     loss_date = fields.Date(
         string='Loss Date',
-        compute='_compute_loss_date',
-        store=True
+        required=True
     )
 
-
     member_id = fields.Many2one(
-        related='claim_id.member_id',
-        store=True
+        'insurance.member',
+        readonly=True
     )
 
     provider_id = fields.Many2one(
-        related='claim_id.provider_id',
-        store=True
+        'insurance.provider',
+        readonly=True
     )
 
     service_id = fields.Many2one(
-        related='claim_id.service_id',
-        store=True
+        'insurance.service',
+        readonly=True
     )
 
     claimed_amount = fields.Float(
-        related='claim_id.claimed_amount',
-        store=True
+        readonly=True
     )
 
     approved_amount = fields.Float(
-        related='claim_id.approved_amount',
-        store=True
+        readonly=True
     )
 
     reinsurer_share = fields.Float(
-        related='claim_id.reinsurer_share',
-        store=True
+        readonly=True
     )
-    @api.depends('claim_id.approved_date')
-    def _compute_loss_date(self):
-        for rec in self:
-            if rec.claim_id.approved_date:
-                rec.loss_date = rec.claim_id.approved_date.date()
-            else:
-                rec.loss_date = False
+
+    # -------------------------------------------------
+    # CONSTRAINTS
+    # -------------------------------------------------
+    _sql_constraints = [
+        (
+            'unique_claim_per_bordereau',
+            'unique(bordereau_id, claim_id)',
+            'This claim already exists in this bordereau.'
+        )
+    ]
+
+    # -------------------------------------------------
+    # CREATE OVERRIDE → SNAPSHOT FREEZE
+    # -------------------------------------------------
+    @api.model
+    def create(self, vals):
+        claim = self.env['insurance.claim'].browse(vals.get('claim_id'))
+
+        if not claim:
+            raise ValidationError("Invalid claim.")
+
+        if claim.state != 'approved':
+            raise ValidationError("Only approved claims can be added to a bordereau.")
+
+        if claim.payment_state != 'paid':
+            raise ValidationError("Only paid claims can be added to a bordereau.")
+
+        vals.update({
+            'loss_date': claim.approved_date,
+            'member_id': claim.member_id.id,
+            'provider_id': claim.provider_id.id,
+            'service_id': claim.service_id.id,
+            'claimed_amount': claim.claimed_amount,
+            'approved_amount': claim.approved_amount,
+            'reinsurer_share': claim.reinsurer_share,
+        })
+
+        return super().create(vals)

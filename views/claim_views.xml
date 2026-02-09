@@ -99,7 +99,7 @@
 
                         <group>
                             <field name="claimed_amount" readonly="state not in ('draft','returned')"/>
-                            <field name="approved_amount" readonly="1"/>
+                            <field name="approved_amount" readonly="state not in ('draft','returned')"/>
                         </group>
 
                         <group string="Return Reason" invisible="state != 'returned'">
