@@ -6,7 +6,7 @@ class InsuranceReinsuranceSettlement(models.Model):
     _name = 'insurance.reinsurance.settlement'
     _description = 'Reinsurance Settlement'
     _order = 'period_start desc'
-
+    _inherit = ['mail.thread', 'mail.activity.mixin']
     # -----------------------------
     # CORE IDENTIFIERS
     # -----------------------------

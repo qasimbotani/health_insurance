@@ -29,7 +29,6 @@ class InsuranceCoverageLine(models.Model):
     used_amount = fields.Float(
         string='Used Amount',
         default=0.0,
-        tracking=True,
     )
 
     remaining_amount = fields.Float(

@@ -6,7 +6,7 @@ class ReinsuranceBordereau(models.Model):
     _name = 'insurance.reinsurance.bordereau'
     _description = 'Reinsurance Bordereau'
     _order = 'period_start desc'
-
+    _inherit = ['mail.thread', 'mail.activity.mixin']
     name = fields.Char(
         required=True,
         readonly=True,

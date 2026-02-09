@@ -14,7 +14,8 @@ class InsurancePolicyCoverageLine(models.Model):
 
     service_id = fields.Many2one(
         'insurance.service',
-        required=True
+        required=True,
+        ondelete='restrict'
     )
 
     covered = fields.Boolean(default=True)

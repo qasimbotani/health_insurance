@@ -6,7 +6,7 @@ class InsurancePolicy(models.Model):
     _name = 'insurance.policy'
     _description = 'Insurance Policy'
     _order = 'start_date desc'
-
+    _inherit = ['mail.thread', 'mail.activity.mixin']
     # --------------------
     # BASIC INFO
     # --------------------

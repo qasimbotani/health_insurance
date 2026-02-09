@@ -1,5 +1,4 @@
-from odoo import models, fields, api
-from odoo.exceptions import ValidationError
+from odoo import models, fields
 
 class InsuranceClaimVote(models.Model):
     _name = 'insurance.claim.vote'
@@ -16,6 +15,7 @@ class InsuranceClaimVote(models.Model):
         'res.users',
         required=True,
         default=lambda self: self.env.user,
+        ondelete='cascade',
     )
 
     decision = fields.Selection(
@@ -30,7 +30,7 @@ class InsuranceClaimVote(models.Model):
 
     _sql_constraints = [
         (
-            'unique_vote_per_user',
+            'uniq_vote_per_user_per_claim',
             'unique(claim_id, user_id)',
             'You have already voted on this claim.'
         )
