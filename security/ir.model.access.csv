@@ -1,0 +1,19 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_policy_user,insurance.policy.user,model_insurance_policy,insurance_core.group_insurance_user,1,0,0,0
+access_policy_manager,insurance.policy.manager,model_insurance_policy,insurance_core.group_insurance_manager,1,1,1,1
+
+access_claim_user,insurance.claim.user,model_insurance_claim,insurance_core.group_insurance_user,1,1,1,0
+access_claim_manager,insurance.claim.manager,model_insurance_claim,insurance_core.group_insurance_manager,1,1,1,1
+access_member_user,insurance.member.user,model_insurance_member,insurance_core.group_insurance_user,1,0,0,0
+access_member_manager,insurance.member.manager,model_insurance_member,insurance_core.group_insurance_manager,1,1,1,1
+access_claim_gm,insurance.claim.gm,model_insurance_claim,insurance_core.group_insurance_gm,1,1,1,1
+access_provider_user,insurance.provider.user,model_insurance_provider,insurance_core.group_insurance_user,1,0,0,0
+access_coverage_template_user,coverage template user,model_insurance_coverage_template,insurance_core.group_insurance_manager,1,1,1,1
+access_coverage_line_user,coverage line user,model_insurance_coverage_line,insurance_core.group_insurance_manager,1,1,1,1
+access_coverage_line_manager,coverage line manager,model_insurance_coverage_line,insurance_core.group_insurance_manager,1,0,0,0
+access_claim_vote_committee,claim.vote.committee,model_insurance_claim_vote,insurance_core.group_insurance_committee,1,1,1,0
+access_bordereau,access_bordereau,model_insurance_reinsurance_bordereau,,1,1,1,0
+access_bordereau_line,access_bordereau_line,model_insurance_reinsurance_bordereau_line,,1,0,0,0
+access_settlement,access_settlement,model_insurance_reinsurance_settlement,,1,1,1,0
+access_reinsurance_contract_user,reinsurance.contract.user,model_insurance_reinsurance_contract,insurance_core.group_reinsurance_user,1,0,0,0
+access_reinsurance_contract_manager,reinsurance.contract.manager,model_insurance_reinsurance_contract,insurance_core.group_reinsurance_manager,1,1,1,0

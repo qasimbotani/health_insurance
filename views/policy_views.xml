@@ -1,0 +1,97 @@
+<odoo>
+
+    <!-- ========================= -->
+    <!-- POLICY LIST VIEW -->
+    <!-- ========================= -->
+    <record id="view_policy_list" model="ir.ui.view">
+        <field name="name">insurance.policy.list</field>
+        <field name="model">insurance.policy</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="annual_limit"/>
+                <field name="manager_approval_limit"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ========================= -->
+    <!-- POLICY FORM VIEW -->
+    <!-- ========================= -->
+    <record id="view_policy_form" model="ir.ui.view">
+        <field name="name">insurance.policy.form</field>
+        <field name="model">insurance.policy</field>
+        <field name="arch" type="xml">
+            <form string="Insurance Policy">
+
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,active,expired"/>
+
+                    <button name="action_activate" type="object" string="Activate" class="btn-primary" invisible="state != 'draft'"/>
+                </header>
+
+                <sheet>
+
+                    <!-- SMART BUTTONS -->
+                    <div class="oe_button_box" name="button_box">
+                        <button type="action" name="%(action_policy_coverage_utilization)d" class="oe_stat_button" icon="fa-chart-pie">
+                            <field name="coverage_count" widget="statinfo" string="Coverage Usage"/>
+                        </button>
+                    </div>
+
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="company_id"/>
+                        </group>
+
+                        <group string="Coverage">
+                            <field name="coverage_template_id"/>
+                        </group>
+
+                        <group>
+                            <field name="annual_limit"/>
+                            <field name="manager_approval_limit"/>
+                        </group>
+                    </group>
+
+                    <group>
+                        <field name="start_date"/>
+                        <field name="end_date"/>
+                    </group>
+                    <div class="oe_button_box" name="button_box">
+                        <button type="action" name="%(action_policy_coverage_utilization)d" class="oe_stat_button" icon="fa-chart-pie">
+                            <span class="o_stat_text">Coverage Usage</span>
+                        </button>
+                    </div>
+
+                    <notebook>
+                        <page string="Coverage">
+                            <field name="coverage_line_ids">
+                                <list editable="bottom">
+                                    <field name="service_id"/>
+                                    <field name="covered"/>
+                                    <field name="annual_limit"/>
+                                    <field name="per_claim_limit"/>
+                                    <field name="copay_percentage"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ========================= -->
+    <!-- POLICY ACTION -->
+    <!-- ========================= -->
+    <record id="action_policy" model="ir.actions.act_window">
+        <field name="name">Policies</field>
+        <field name="res_model">insurance.policy</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

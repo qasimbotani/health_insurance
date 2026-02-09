@@ -1,0 +1,37 @@
+﻿<odoo>
+    <record id="view_provider_list" model="ir.ui.view">
+        <field name="name">insurance.provider.list</field>
+        <field name="model">insurance.provider</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="total_paid"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_provider_form" model="ir.ui.view">
+        <field name="name">insurance.provider.form</field>
+        <field name="model">insurance.provider</field>
+        <field name="arch" type="xml">
+            <form string="Medical Provider">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="partner_id"/>
+
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_provider" model="ir.actions.act_window">
+        <field name="name">Providers</field>
+        <field name="res_model">insurance.provider</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,39 @@
+<odoo>
+
+    <!-- ========================= -->
+    <!-- BORDEREAU LINE TREE VIEW -->
+    <!-- ========================= -->
+    <record id="view_reinsurance_bordereau_line_tree" model="ir.ui.view">
+        <field name="name">insurance.reinsurance.bordereau.line.tree</field>
+        <field name="model">insurance.reinsurance.bordereau.line</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="claim_id"/>
+                <field name="loss_date"/>
+                <field name="approved_amount"/>
+                <field name="reinsurer_share"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ========================= -->
+    <!-- BORDEREAU LINE FORM VIEW -->
+    <!-- ========================= -->
+    <record id="view_reinsurance_bordereau_line_form" model="ir.ui.view">
+        <field name="name">insurance.reinsurance.bordereau.line.form</field>
+        <field name="model">insurance.reinsurance.bordereau.line</field>
+        <field name="arch" type="xml">
+            <form string="Bordereau Line">
+                <sheet>
+                    <group>
+                        <field name="claim_id" readonly="1"/>
+                        <field name="loss_date" readonly="1"/>
+                        <field name="approved_amount" readonly="1"/>
+                        <field name="reinsurer_share" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,19 @@
+<odoo>
+
+    <!-- Insurance User -->
+    <record id="group_insurance_user" model="res.groups">
+        <field name="name">Insurance User</field>
+    </record>
+
+    <!-- Insurance Manager -->
+    <record id="group_insurance_manager" model="res.groups">
+        <field name="name">Insurance Manager</field>
+        <field name="implied_ids" eval="[(4, ref('insurance_core.group_insurance_user'))]"/>
+    </record>
+    <!-- Insurance General Manager -->
+    <record id="group_insurance_gm" model="res.groups">
+        <field name="name">Insurance General Manager</field>
+        <field name="implied_ids" eval="[(4, ref('insurance_core.group_insurance_manager'))]"/>
+    </record>
+
+</odoo>

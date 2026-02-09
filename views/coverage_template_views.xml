@@ -1,0 +1,88 @@
+<odoo>
+    <!-- ============================= -->
+    <!-- COVERAGE TEMPLATE LIST VIEW -->
+    <!-- ============================= -->
+    <record id="view_coverage_template_list" model="ir.ui.view">
+        <field name="name">insurance.coverage.template.list</field>
+        <field name="model">insurance.coverage.template</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ============================= -->
+    <!-- COVERAGE TEMPLATE FORM VIEW -->
+    <!-- ============================= -->
+    <record id="view_coverage_template_form" model="ir.ui.view">
+        <field name="name">insurance.coverage.template.form</field>
+        <field name="model">insurance.coverage.template</field>
+        <field name="arch" type="xml">
+            <form string="Coverage Template">
+                <sheet>
+
+                    <group>
+                        <field name="name"/>
+                        <field name="active"/>
+                    </group>
+
+                    <field name="description"/>
+
+                    <notebook>
+                        <page string="Covered Services">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="service_id"/>
+                                    <field name="covered"/>
+                                    <field name="annual_limit"/>
+                                    <field name="per_claim_limit"/>
+                                    <field name="copay_percentage"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================================= -->
+    <!-- COVERAGE UTILIZATION LIST VIEW -->
+    <!-- ================================= -->
+    <record id="view_coverage_line_utilization_list" model="ir.ui.view">
+        <field name="name">insurance.coverage.line.utilization.list</field>
+        <field name="model">insurance.coverage.line</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="service_id"/>
+                <field name="annual_limit"/>
+                <field name="used_amount"/>
+                <field name="remaining_amount"/>
+                <field name="utilization_percent" widget="percentpie"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ============================= -->
+    <!-- UTILIZATION ACTION -->
+    <!-- ============================= -->
+    <record id="action_policy_coverage_utilization" model="ir.actions.act_window">
+        <field name="name">Coverage Utilization</field>
+        <field name="res_model">insurance.coverage.line</field>
+        <field name="view_mode">list</field>
+        <field name="domain">[('template_id', '=', active_id)]</field>
+    </record>
+
+    <!-- ============================= -->
+    <!-- COVERAGE TEMPLATE ACTION -->
+    <!-- ============================= -->
+    <record id="action_coverage_template" model="ir.actions.act_window">
+        <field name="name">Coverage Templates</field>
+        <field name="res_model">insurance.coverage.template</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

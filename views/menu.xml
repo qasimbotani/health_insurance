@@ -1,0 +1,39 @@
+<odoo>
+
+    <!-- =============================== -->
+    <!-- ROOT MENU -->
+    <!-- =============================== -->
+    <menuitem id="menu_insurance_root" name="Health Insurance" sequence="10" />
+
+    <!-- =============================== -->
+    <!-- MAIN MENUS -->
+    <!-- =============================== -->
+    <menuitem id="menu_policy" name="Policies" parent="menu_insurance_root" action="action_policy" sequence="20" />
+
+    <menuitem id="menu_member" name="Members" parent="menu_insurance_root" action="action_member" sequence="30" />
+
+    <menuitem id="menu_provider" name="Providers" parent="menu_insurance_root" action="action_provider" sequence="40" />
+
+    <menuitem id="menu_claim" name="Claims" parent="menu_insurance_root" action="action_claim" sequence="50" />
+
+    <!-- =============================== -->
+    <!-- CONFIGURATION -->
+    <!-- =============================== -->
+    <menuitem id="menu_insurance_configuration" name="Configuration" parent="menu_insurance_root" sequence="90" />
+
+    <menuitem id="menu_insurance_service" name="Services" parent="menu_insurance_configuration" action="action_insurance_service" sequence="10" />
+
+    <menuitem id="menu_insurance_coverage_template" name="Coverage Templates" parent="menu_insurance_configuration" action="action_coverage_template" sequence="20" />
+
+    <!-- =============================== -->
+    <!-- REINSURANCE -->
+    <!-- =============================== -->
+
+    <menuitem id="menu_reinsurance_contract" name="Reinsurance Contracts" parent="menu_insurance_configuration" action="action_reinsurance_contract" sequence="40"/>
+
+    <menuitem id="menu_reinsurance_root" name="Reinsurance"/>
+
+    <menuitem id="menu_reinsurance_bordereau" name="Bordereaux" parent="menu_reinsurance_root" action="action_reinsurance_bordereau"/>
+
+    <menuitem id="menu_reinsurance_settlement" name="Settlements" parent="menu_reinsurance_root" action="action_reinsurance_settlement"/>
+</odoo>

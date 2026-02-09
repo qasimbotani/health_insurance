@@ -1,0 +1,66 @@
+<odoo>
+
+    <!-- ========================= -->
+    <!-- REINSURANCE SETTLEMENT TREE -->
+    <!-- ========================= -->
+    <record id="view_reinsurance_settlement_tree" model="ir.ui.view">
+        <field name="name">insurance.reinsurance.settlement.tree</field>
+        <field name="model">insurance.reinsurance.settlement</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="reinsurance_contract_id"/>
+                <field name="period_start"/>
+                <field name="period_end"/>
+                <field name="total_ceded_amount"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ========================= -->
+    <!-- REINSURANCE SETTLEMENT FORM -->
+    <!-- ========================= -->
+    <record id="view_reinsurance_settlement_form" model="ir.ui.view">
+        <field name="name">insurance.reinsurance.settlement.form</field>
+        <field name="model">insurance.reinsurance.settlement</field>
+        <field name="arch" type="xml">
+            <form string="Reinsurance Settlement">
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,settled"/>
+                </header>
+
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" readonly="1"/>
+                            <field name="reinsurance_contract_id"/>
+                            <field name="period_start"/>
+                            <field name="period_end"/>
+                        </group>
+                        <group>
+                            <field name="total_ceded_amount" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Bordereaux">
+                            <field name="bordereau_ids" readonly="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ========================= -->
+    <!-- REINSURANCE SETTLEMENT ACTION -->
+    <!-- THIS IS WHAT YOU WERE MISSING -->
+    <!-- ========================= -->
+    <record id="action_reinsurance_settlement" model="ir.actions.act_window">
+        <field name="name">Reinsurance Settlements</field>
+        <field name="res_model">insurance.reinsurance.settlement</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

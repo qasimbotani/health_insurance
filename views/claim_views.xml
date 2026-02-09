@@ -1,0 +1,210 @@
+<odoo>
+
+    <!-- ========================= -->
+    <!-- CLAIM LIST (TREE) VIEW -->
+    <!-- ========================= -->
+    <record id="view_claim_tree" model="ir.ui.view">
+        <field name="name">insurance.claim.tree</field>
+        <field name="model">insurance.claim</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="fraud_flag" decoration-warning="is_overdue">
+                <field name="name"/>
+                <field name="member_id"/>
+                <field name="provider_id"/>
+                <field name="claimed_amount"/>
+                <field name="approved_amount"/>
+                <field name="state"/>
+                <field name="sla_deadline"/>
+                <field name="is_overdue"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ========================= -->
+    <!-- CLAIM SEARCH VIEW -->
+    <!-- ========================= -->
+    <record id="view_claim_search" model="ir.ui.view">
+        <field name="name">insurance.claim.search</field>
+        <field name="model">insurance.claim</field>
+        <field name="arch" type="xml">
+            <search string="Search Claims">
+
+                <filter name="filter_draft" string="Draft" domain="[('state','=','draft')]"/>
+
+                <filter name="filter_submitted" string="Submitted" domain="[('state','=','submitted')]"/>
+
+                <filter name="filter_returned" string="Returned" domain="[('state','=','returned')]"/>
+
+                <filter name="filter_approved" string="Approved" domain="[('state','=','approved')]"/>
+
+                <filter name="filter_rejected" string="Rejected" domain="[('state','=','rejected')]"/>
+
+                <separator/>
+
+                <filter name="filter_fraud" string="Fraud Flagged" domain="[('fraud_flag','=',True)]"/>
+
+                <filter name="filter_overdue" string="Overdue" domain="[('is_overdue','=',True)]"/>
+
+                <field name="member_id"/>
+                <field name="provider_id"/>
+                <field name="service_id"/>
+
+            </search>
+        </field>
+    </record>
+
+    <!-- ========================= -->
+    <!-- CLAIM FORM VIEW -->
+    <!-- ========================= -->
+    <record id="view_claim_form" model="ir.ui.view">
+        <field name="name">insurance.claim.form</field>
+        <field name="model">insurance.claim</field>
+        <field name="arch" type="xml">
+            <form string="Insurance Claim">
+
+                <!-- ================= HEADER ================= -->
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,returned,approved,rejected"/>
+
+                    <button name="action_submit" type="object" string="Submit" class="btn-primary" invisible="state != 'draft'"/>
+
+                    <button name="action_approve" type="object" string="Approve" class="btn-success" invisible="state != 'submitted' or escalation_level == 'committee'"/>
+
+                    <button name="action_reject" type="object" string="Reject" class="btn-danger" invisible="state != 'submitted'"/>
+
+                    <button name="action_flag_fraud" type="object" string="Flag Fraud" class="btn-danger" invisible="fraud_flag"/>
+
+                    <button name="action_clear_fraud" type="object" string="Clear Fraud Flag" class="btn-secondary" invisible="not fraud_flag" groups="insurance_core.group_insurance_manager"/>
+
+                    <button name="action_return_for_correction" type="object" string="Return for Correction" class="btn-warning" invisible="state != 'submitted'" groups="insurance_core.group_insurance_manager"/>
+
+                    <button name="action_resubmit" type="object" string="Resubmit" class="btn-primary" invisible="state != 'returned'"/>
+
+                    <button name="action_create_payment" type="object" string="Create Payment" class="btn-primary" invisible="state != 'approved' or payment_state != 'not_paid'"/>
+                    <button name="action_override_approve" type="object" string="Override Approve" class="btn-danger" groups="insurance_core.group_insurance_gm,insurance_core.group_insurance_committee" invisible="state != 'submitted' or override_used" />
+
+                </header>
+
+                <sheet>
+
+                    <!-- ================= BASIC INFO ================= -->
+                    <group>
+                        <group>
+                            <field name="name" readonly="1"/>
+                            <field name="member_id" readonly="state != 'draft'"/>
+                            <field name="provider_id" readonly="state not in ('draft','returned')"/>
+                            <field name="service_id" readonly="state not in ('draft','returned')"/>
+                            <field name="company_id" readonly="state not in ('draft','returned')"/>
+                        </group>
+
+                        <group>
+                            <field name="claimed_amount" readonly="state not in ('draft','returned')"/>
+                            <field name="approved_amount" readonly="1"/>
+                        </group>
+
+                        <group string="Return Reason" invisible="state != 'returned'">
+                            <field name="return_reason" readonly="state != 'returned'"/>
+                        </group>
+                    </group>
+
+                    <!-- ================= NOTEBOOK ================= -->
+                    <notebook>
+
+                        <!-- ===== APPROVAL ===== -->
+                        <page string="Approval">
+                            <group>
+                                <group>
+                                    <field name="approval_level" readonly="1"/>
+                                    <field name="manager_approval_limit" readonly="1"/>
+                                    <field name="approved_by" readonly="1"/>
+                                    <field name="approved_date" readonly="1"/>
+                                </group>
+                                <group string="Override Justification" invisible="not override_used and not state == 'submitted'">
+                                    <field name="override_reason" placeholder="Mandatory reason for override..." nolabel="1"/>
+                                </group>
+
+                                <group string="Payment">
+                                    <field name="payee_type"/>
+                                    <field name="payment_state" readonly="1"/>
+                                    <field name="payment_id" readonly="1"/>
+                                </group>
+
+                                <group string="Escalation">
+                                    <field name="escalation_level" readonly="1"/>
+                                    <field name="committee_required" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- ===== MEDICAL COMMITTEE ===== -->
+                        <page string="Medical Committee" invisible="not committee_required">
+
+                            <group>
+                                <field name="committee_decision" readonly="1"/>
+                                <field name="committee_notes"/>
+                            </group>
+
+                            <footer>
+                                <button name="action_committee_approve" type="object" string="Committee Approve" class="btn-success" invisible="state != 'submitted'" groups="insurance_core.group_insurance_committee"/>
+
+                                <button name="action_committee_reject" type="object" string="Committee Reject" class="btn-danger" invisible="state != 'submitted'" groups="insurance_core.group_insurance_committee"/>
+                            </footer>
+                        </page>
+
+                        <!-- ===== REINSURANCE ===== -->
+                        <page string="Reinsurance">
+                            <group>
+                                <field name="reinsurance_contract_id" readonly="1"/>
+                                <field name="insurer_share" readonly="1"/>
+                                <field name="reinsurer_share" readonly="1"/>
+                            </group>
+                        </page>
+
+                        <!-- ===== FRAUD ===== -->
+                        <page string="Fraud Assessment">
+                            <group>
+                                <field name="fraud_score" readonly="1"/>
+                                <field name="fraud_flag" readonly="1"/>
+                                <field name="fraud_reason" readonly="1"/>
+                            </group>
+                        </page>
+
+                        <!-- ===== SLA ===== -->
+                        <page string="SLA">
+                            <group>
+                                <field name="sla_deadline" readonly="1"/>
+                                <field name="is_overdue" readonly="1"/>
+                            </group>
+                        </page>
+
+                    </notebook>
+
+                </sheet>
+
+                <!-- ================= CHATTER ================= -->
+                <chatter/>
+
+            </form>
+        </field>
+    </record>
+
+    <!-- ========================= -->
+    <!-- ACTIONS -->
+    <!-- ========================= -->
+
+    <record id="action_member_claims" model="ir.actions.act_window">
+        <field name="name">Member Claims</field>
+        <field name="res_model">insurance.claim</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('member_id','=',active_id)]</field>
+        <field name="context">{'default_member_id': active_id}</field>
+    </record>
+
+    <record id="action_claim" model="ir.actions.act_window">
+        <field name="name">Claims</field>
+        <field name="res_model">insurance.claim</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_claim_search"/>
+    </record>
+
+</odoo>
