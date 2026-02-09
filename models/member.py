@@ -26,6 +26,23 @@ class InsuranceMember(models.Model):
         'member_id',
         string='Claims',
     )
+    def action_print_welcome_pack(self):
+        self.ensure_one()
+        return self.env.ref('insurance_core.action_member_welcome_pack').report_action(self)
+
+
+    def action_print_id_card(self):
+        self.ensure_one()
+        return self.env.ref('insurance_core.action_member_id_card').report_action(self)
+
+    # (Optional but VERY professional) Auto-send email on activation
+    # def action_activate(self):
+    #     self.state = 'active'
+
+    #     template = self.env.ref(
+    #         'insurance_core.email_template_member_welcome'
+    #     )
+    #     template.send_mail(self.id, force_send=True)
 
     remaining_annual_limit = fields.Float(
     compute='_compute_remaining_limit',

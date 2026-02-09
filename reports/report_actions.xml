@@ -1,0 +1,18 @@
+<odoo>
+    <record id="action_member_welcome_pack" model="ir.actions.report">
+        <field name="name">Member Welcome Pack</field>
+        <field name="model">insurance.member</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">insurance_core.report_member_welcome_pack</field>
+    </record>
+
+    <record id="action_member_id_card" model="ir.actions.report">
+        <field name="name">Insurance ID Card</field>
+        <field name="model">insurance.member</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">insurance_core.report_member_id_card</field>
+        <field name="paperformat_id" ref="insurance_core.paperformat_eurocard"/>
+    </record>
+
+
+</odoo>

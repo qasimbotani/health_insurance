@@ -27,6 +27,8 @@
                         <button type="action" name="%(action_member_claims)d" class="oe_stat_button" icon="fa-file-medical">
                             <field name="total_claimed" widget="statinfo" string="Total Claimed"/>
                         </button>
+                        <button name="action_print_welcome_pack" type="object" string="Print Welcome Pack" class="btn-primary"/>
+                        <button name="action_print_id_card" type="object" string="Print ID Card" class="btn-secondary"/>
 
                     </div>
 

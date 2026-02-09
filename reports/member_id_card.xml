@@ -1,0 +1,44 @@
+<odoo>
+
+    <template id="report_member_id_card">
+        <t t-call="web.basic_layout">
+            <main>
+                <t t-foreach="docs" t-as="doc">
+
+                    <div style="width:85.6mm;height:54mm;border:1px solid #000;padding:6mm;font-size:10px;">
+
+                        <div style="display:flex;align-items:center;margin-bottom:5px;">
+                            <img t-if="doc.company_id.logo" t-att-src="'/web/image/res.company/%s/logo' % doc.company_id.id" style="height:25px;margin-right:8px;"/>
+                            <strong>
+                                <t t-esc="doc.company_id.name"/>
+                            </strong>
+                        </div>
+
+                        <hr/>
+
+                        <p>
+                            <strong>Name:</strong>
+                            <t t-esc="doc.name"/>
+                        </p>
+                        <p>
+                            <strong>Policy:</strong>
+                            <t t-esc="doc.policy_id.name"/>
+                        </p>
+                        <p>
+                            <strong>Valid Until:</strong>
+                            <t t-esc="doc.policy_id.end_date"/>
+                        </p>
+                        <p>
+                            <strong>Member ID:</strong>
+                            <t t-esc="doc.id"/>
+                        </p>
+
+                    </div>
+
+                    <div style="page-break-after:always;"></div>
+                </t>
+            </main>
+        </t>
+    </template>
+
+</odoo>

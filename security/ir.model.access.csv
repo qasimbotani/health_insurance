@@ -1,7 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_policy_user,insurance.policy.user,model_insurance_policy,insurance_core.group_insurance_user,1,0,0,0
 access_policy_manager,insurance.policy.manager,model_insurance_policy,insurance_core.group_insurance_manager,1,1,1,1
-
 access_claim_user,insurance.claim.user,model_insurance_claim,insurance_core.group_insurance_user,1,1,1,0
 access_claim_manager,insurance.claim.manager,model_insurance_claim,insurance_core.group_insurance_manager,1,1,1,1
 access_member_user,insurance.member.user,model_insurance_member,insurance_core.group_insurance_user,1,0,0,0
@@ -17,3 +16,6 @@ access_bordereau_line,access_bordereau_line,model_insurance_reinsurance_borderea
 access_settlement,access_settlement,model_insurance_reinsurance_settlement,,1,1,1,0
 access_reinsurance_contract_user,reinsurance.contract.user,model_insurance_reinsurance_contract,insurance_core.group_reinsurance_user,1,0,0,0
 access_reinsurance_contract_manager,reinsurance.contract.manager,model_insurance_reinsurance_contract,insurance_core.group_reinsurance_manager,1,1,1,0
+access_policy_coverage_line_user,Policy Coverage Line User,model_insurance_policy_coverage_line,base.group_user,1,1,1,1
+access_insurance_service_user,Insurance Service User,model_insurance_service,base.group_user,1,1,1,0
+

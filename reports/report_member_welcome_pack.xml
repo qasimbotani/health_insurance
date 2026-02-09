@@ -1,0 +1,199 @@
+<odoo>
+
+    <template id="report_member_welcome_pack">
+        <t t-call="web.external_layout">
+            <main>
+
+                <t t-foreach="docs" t-as="doc">
+
+                    <!-- ================= COVER PAGE ================= -->
+                    <div style="page-break-after:always;">
+
+                        <div style="text-align:center; margin-top:80px;">
+                            <img t-if="doc.company_id.logo" t-att-src="'/web/image/res.company/%s/logo' % doc.company_id.id" style="max-height:140px;"/>
+
+                            <h1 style="margin-top:40px;">Welcome to</h1>
+                            <h2>
+                                <t t-esc="doc.company_id.name"/>
+                            </h2>
+
+                            <h3 style="margin-top:40px;">Health Insurance Welcome Pack</h3>
+
+                            <p style="margin-top:60px; font-size:16px;">
+                                Prepared for:
+                            </p>
+
+                            <h2>
+                                <t t-esc="doc.name"/>
+                            </h2>
+
+                            <p>
+                                Policy Number:
+                                <strong>
+                                    <t t-esc="doc.policy_id.name"/>
+                                </strong>
+                            </p>
+
+                            <p>
+                                Coverage Period:
+                                <strong>
+                                    <t t-esc="doc.policy_id.start_date"/>
+                                    –
+                                    <t t-esc="doc.policy_id.end_date"/>
+                                </strong>
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <!-- ================= MEMBER DETAILS ================= -->
+                    <div style="page-break-after:always;">
+
+                        <h2>Member Details</h2>
+
+                        <table class="table table-sm" style="width:100%; margin-top:20px;">
+                            <tr>
+                                <td>
+                                    <strong>Full Name</strong>
+                                </td>
+                                <td>
+                                    <t t-esc="doc.name"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Member ID</strong>
+                                </td>
+                                <td>
+                                    <t t-esc="doc.id"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Policy</strong>
+                                </td>
+                                <td>
+                                    <t t-esc="doc.policy_id.name"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Policy Period</strong>
+                                </td>
+                                <td>
+                                    <t t-esc="doc.policy_id.start_date"/>
+                                    –
+                                    <t t-esc="doc.policy_id.end_date"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                    </div>
+
+                    <!-- ================= BENEFITS ================= -->
+                    <div style="page-break-after:always;">
+
+                        <h2>Covered Benefits</h2>
+
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Service</th>
+                                    <th>Limits</th>
+                                    <th>Copay</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="doc.policy_id.coverage_line_ids" t-as="line">
+                                    <tr>
+                                        <td>
+                                            <t t-esc="line.service_id.name"/>
+                                        </td>
+
+                                        <td>
+                                            <t t-if="line.annual_limit">
+                                                Annual: <t t-esc="line.annual_limit"/>
+                                            </t>
+                                            <t t-else="">Annual: Unlimited</t>
+                                            <br/>
+                                            <t t-if="line.per_claim_limit">
+                                                Per Claim: <t t-esc="line.per_claim_limit"/>
+                                            </t>
+                                            <t t-else="">Per Claim: Unlimited</t>
+                                        </td>
+
+                                        <td>
+                                            <t t-if="line.copay_percentage">
+                                                <t t-esc="line.copay_percentage"/>
+%
+                                            </t>
+                                            <t t-else="">0%</t>
+                                        </td>
+
+                                        <td>
+                                            <t t-if="line.covered">Covered</t>
+                                            <t t-else="">Excluded</t>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                    </div>
+
+                    <!-- ================= EXCLUSIONS ================= -->
+                    <div style="page-break-after:always;">
+
+                        <h2>Policy Exclusions</h2>
+
+                        <p>
+                            The following services are excluded from coverage unless explicitly stated otherwise:
+                        </p>
+
+                        <!-- DERIVE EXCLUSIONS FROM COVERAGE LINES -->
+                        <t t-set="excluded_lines" t-value="doc.policy_id.coverage_line_ids.filtered(lambda l: not l.covered)"/>
+
+                        <ul style="margin-top:20px;">
+                            <t t-if="excluded_lines">
+                                <t t-foreach="excluded_lines" t-as="line">
+                                    <li>
+                                        <t t-esc="line.service_id.name"/>
+                                    </li>
+                                </t>
+                            </t>
+                            <t t-else="">
+                                <li>No specific exclusions apply.</li>
+                            </t>
+                        </ul>
+
+                    </div>
+
+                    <!-- ================= FOOTER PAGE ================= -->
+                    <div>
+
+                        <h2>Important Notes</h2>
+
+                        <ul>
+                            <li>This document is for informational purposes only.</li>
+                            <li>Coverage is subject to policy terms and conditions.</li>
+                            <li>Claims require prior approval where applicable.</li>
+                            <li>Please keep your Insurance ID Card with you at all times.</li>
+                        </ul>
+
+                        <p style="margin-top:40px;">
+                            If you have questions, contact:
+                            <strong>
+                                <t t-esc="doc.company_id.name"/>
+                            </strong>
+                        </p>
+
+                    </div>
+
+                </t>
+
+            </main>
+        </t>
+    </template>
+
+</odoo>
