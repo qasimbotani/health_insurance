@@ -1,151 +1,224 @@
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError
+from datetime import date, timedelta
 
 
 class InsurancePolicy(models.Model):
-    _name = 'insurance.policy'
-    _description = 'Insurance Policy'
-    _order = 'start_date desc'
-    _inherit = ['mail.thread', 'mail.activity.mixin']
-    # --------------------
+    _name = "insurance.policy"
+    _description = "Insurance Policy"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _order = "start_date desc"
+
+    # -------------------------------------------------
     # BASIC INFO
-    # --------------------
+    # -------------------------------------------------
 
-    name = fields.Char(required=True)
-
-    company_id = fields.Many2one(
-        'res.company',
-        string='Company',
-        help='Corporate policy owner (if any)'
-    )
-
-    state = fields.Selection(
-        [
-            ('draft', 'Draft'),
-            ('active', 'Active'),
-            ('expired', 'Expired'),
-        ],
-        default='draft',
-        string='Status',
+    name = fields.Char(
+        string="Policy Number",
+        required=True,
+        readonly=True,
+        copy=False,
+        default="New",
+        index=True,
         tracking=True,
     )
 
-    start_date = fields.Date(required=True)
-    end_date = fields.Date(required=True)
+    member_id = fields.Many2one(
+        "insurance.member",
+        string="Policy Holder",
+        required=True,
+        tracking=True,
+    )
+
+    company_id = fields.Many2one(
+        "res.company",
+        string="Company",
+        required=True,
+        default=lambda self: self.env.company,
+    )
+
+    # -------------------------------------------------
+    # POLICY PERIOD
+    # -------------------------------------------------
+
+    start_date = fields.Date(
+        string="Start Date",
+        required=True,
+        tracking=True,
+    )
+
+    end_date = fields.Date(
+        string="End Date",
+        required=True,
+        tracking=True,
+    )
+
+    # -------------------------------------------------
+    # STATE MACHINE (DIAGRAM-DRIVEN)
+    # -------------------------------------------------
+
+    state = fields.Selection(
+        [
+            ("draft", "Draft"),
+            ("active", "Active"),
+            ("expiring", "Expiring Soon"),
+            ("renewal_quoted", "Renewal Quoted"),
+            ("renewed", "Renewed"),
+            ("expired", "Expired"),
+            ("cancelled", "Cancelled"),
+        ],
+        string="Status",
+        default="draft",
+        tracking=True,
+    )
+
+    # -------------------------------------------------
+    # LIMITS
+    # -------------------------------------------------
 
     annual_limit = fields.Float(
-        string="Annual Coverage Limit",
-        required=True
-    )
-
-    active = fields.Boolean(default=True)
-    coverage_template_id = fields.Many2one(
-        'insurance.coverage.template',
-        string='Coverage Template',
+        string="Annual Limit",
         required=True,
-        help='Defines what services are covered under this policy'
+        tracking=True,
     )
-    coverage_line_ids = fields.One2many(
-        'insurance.policy.coverage.line',
-        'policy_id',
-        string='Coverage Lines'
-    )
-    coverage_count = fields.Integer(
-        compute='_compute_coverage_count'
-    )
-
-    def _compute_coverage_count(self):
-        for rec in self:
-            rec.coverage_count = len(
-                rec.coverage_template_id.line_ids
-            ) if rec.coverage_template_id else 0
-
-
-    # --------------------
-    # AUTO-GENERATE LINES FROM TEMPLATE
-    # --------------------
-    def _generate_coverage_lines_from_template(self):
-        for policy in self:
-            policy.coverage_line_ids.unlink()
-
-            template = policy.coverage_template_id
-            if not template:
-                continue
-
-            lines = []
-            for t_line in template.line_ids:
-                lines.append((0, 0, {
-                    'service_id': t_line.service_id.id,
-                    'covered': t_line.covered,
-                    'annual_limit': t_line.annual_limit,
-                    'per_claim_limit': t_line.per_claim_limit,
-                    'copay_percentage': t_line.copay_percentage,
-                }))
-
-            policy.coverage_line_ids = lines
-
-    @api.onchange('coverage_template_id')
-    def _onchange_coverage_template_id(self):
-        self._generate_coverage_lines_from_template()
-
-
-    # --------------------
-    # APPROVAL THRESHOLDS (NEW)
-    # --------------------
 
     manager_approval_limit = fields.Float(
-        string='Manager Approval Limit',
+        string="Manager Approval Limit",
         required=True,
-        help=(
-            'Claims up to this amount can be approved by a Manager. '
-            'Claims above this amount require General Manager approval.'
-        ),
+        tracking=True,
     )
 
-    # --------------------
-    # VALIDATIONS
-    # --------------------
+    # -------------------------------------------------
+    # COMPUTED FLAGS
+    # -------------------------------------------------
 
-    @api.constrains('start_date', 'end_date')
-    def _check_dates(self):
+    is_expired = fields.Boolean(
+        string="Expired",
+        compute="_compute_is_expired",
+        store=True,
+    )
+
+    days_to_expiry = fields.Integer(
+        string="Days to Expiry",
+        compute="_compute_days_to_expiry",
+        store=False,
+    )
+
+    # -------------------------------------------------
+    # COMPUTES
+    # -------------------------------------------------
+
+    @api.depends("end_date")
+    def _compute_is_expired(self):
+        today = date.today()
         for rec in self:
-            if rec.end_date < rec.start_date:
-                raise ValidationError("End date cannot be before start date.")
+            rec.is_expired = bool(rec.end_date and rec.end_date < today)
 
-    # --------------------
-    # LIFECYCLE ACTIONS
-    # --------------------
+    @api.depends("end_date")
+    def _compute_days_to_expiry(self):
+        today = date.today()
+        for rec in self:
+            if rec.end_date:
+                rec.days_to_expiry = (rec.end_date - today).days
+            else:
+                rec.days_to_expiry = 0
+
+    # -------------------------------------------------
+    # STATE TRANSITIONS (MANUAL)
+    # -------------------------------------------------
 
     def action_activate(self):
         for rec in self:
-            if rec.state != 'draft':
+            if rec.state != "draft":
+                raise ValidationError("Only draft policies can be activated.")
+
+            if rec.start_date > rec.end_date:
+                raise ValidationError("End date must be after start date.")
+
+            rec.state = "active"
+
+            rec.message_post(body="✅ Policy activated.")
+
+    def action_cancel(self):
+        for rec in self:
+            if rec.state in ("expired", "cancelled"):
                 continue
 
-            if not rec.coverage_line_ids:
-                raise ValidationError(
-                    "You must configure coverage before activating the policy."
+            rec.state = "cancelled"
+
+            rec.message_post(body="❌ Policy cancelled.")
+
+    # -------------------------------------------------
+    # AUTOMATIC STATE ENFORCEMENT
+    # -------------------------------------------------
+
+    def _auto_update_policy_state(self):
+        """
+        Enforces expiry and expiring states.
+        Called by cron.
+        """
+        today = date.today()
+
+        for rec in self:
+            if rec.state in ("cancelled", "expired"):
+                continue
+
+            if rec.end_date < today:
+                rec.state = "expired"
+                rec.message_post(body="⛔ Policy expired automatically.")
+                continue
+
+            days_left = (rec.end_date - today).days
+
+            if days_left <= 90 and rec.state == "active":
+                rec.state = "expiring"
+                rec.message_post(
+                    body=(
+                        "⚠️ Policy entering renewal window.<br/>"
+                        f"Days to expiry: {days_left}"
+                    )
                 )
 
-            rec.state = 'active'
-
-
-    def action_expire(self):
-        for rec in self:
-            rec.state = 'expired'
-            rec.active = False
-
-    # --------------------
-    # CRON: AUTO-EXPIRE
-    # --------------------
+    # -------------------------------------------------
+    # ORM OVERRIDES
+    # -------------------------------------------------
 
     @api.model
-    def cron_expire_policies(self):
-        today = fields.Date.today()
+    def create(self, vals):
+        if vals.get("name", "New") == "New":
+            vals["name"] = (
+                self.env["ir.sequence"].next_by_code("insurance.policy") or "New"
+            )
+        return super().create(vals)
 
-        policies = self.search([
-            ('state', '=', 'active'),
-            ('end_date', '<', today),
-        ])
+    # -------------------------------------------------
+    # SMART BUTTON COUNTERS
+    # -------------------------------------------------
 
-        for policy in policies:
-            policy.action_expire()
+    coverage_count = fields.Integer(
+        string="Coverage Lines",
+        compute="_compute_coverage_count",
+        store=False,
+    )
+
+    def _compute_coverage_count(self):
+        for policy in self:
+            policy.coverage_count = len(policy.coverage_line_ids)
+
+    # ----------------------------------
+    # COVERAGE TEMPLATE
+    # ----------------------------------
+
+    coverage_template_id = fields.Many2one(
+        "insurance.coverage.template",
+        string="Coverage Template",
+        required=True,
+        help="Defines covered services and limits for this policy",
+    )
+
+    coverage_line_ids = fields.One2many(
+        "insurance.coverage.line",
+        related="coverage_template_id.line_ids",
+        string="Coverage Lines",
+        readonly=True,
+    )

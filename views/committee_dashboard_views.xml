@@ -1,0 +1,54 @@
+<odoo>
+
+    <!-- ========================= -->
+    <!-- COMMITTEE DASHBOARD LIST -->
+    <!-- ========================= -->
+    <record id="view_committee_claim_tree" model="ir.ui.view">
+        <field name="name">insurance.claim.committee.tree</field>
+        <field name="model">insurance.claim</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="fraud_flag"
+                decoration-warning="is_overdue"
+                decoration-info="committee_required">
+                <field name="name" />
+                <field name="member_id" />
+                <field name="provider_id" />
+                <field name="claimed_amount" />
+                <field name="fraud_score" />
+                <field name="committee_approved_count" string="Approvals" />
+                <field name="committee_rejected_count" string="Rejections" />
+                <field name="committee_quorum" string="Quorum" />
+                <field name="sla_deadline" />
+                <field name="is_overdue" />
+            </list>
+        </field>
+    </record>
+
+    <!-- ========================= -->
+    <!-- COMMITTEE DASHBOARD ACTION -->
+    <!-- ========================= -->
+    <record id="action_committee_dashboard" model="ir.actions.act_window">
+        <field name="name">Committee Review</field>
+        <field name="res_model">insurance.claim</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_committee_claim_tree" />
+        <field name="domain">
+            [('committee_required','=',True), ('state','=','submitted')]
+        </field>
+    </record>
+
+    <!-- ========================= -->
+    <!-- COMMITTEE MENU -->
+    <!-- ========================= -->
+    <menuitem id="menu_insurance_committee_root"
+        name="Medical Committee"
+        groups="insurance_core.group_insurance_committee"
+        sequence="40" />
+
+    <menuitem id="menu_committee_dashboard"
+        name="Committee Dashboard"
+        parent="menu_insurance_committee_root"
+        action="action_committee_dashboard"
+        groups="insurance_core.group_insurance_committee" />
+
+</odoo>

@@ -1,0 +1,35 @@
+<odoo>
+    <record id="view_committee_dashboard" model="ir.ui.view">
+        <field name="name">insurance.committee.dashboard</field>
+        <field name="model">insurance.claim</field>
+        <field name="arch" type="xml">
+            <tree string="Committee Review Queue">
+                <field name="name" />
+                <field name="member_id" />
+                <field name="provider_id" />
+                <field name="fraud_score" />
+                <field name="committee_quorum" />
+                <field name="state" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_committee_dashboard" model="ir.actions.act_window">
+        <field name="name">Committee Dashboard</field>
+        <field name="res_model">insurance.claim</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">
+            [
+            '|',
+            ('escalation_level', '=', 'committee'),
+            ('fraud_flag', '=', True)
+            ]
+        </field>
+    </record>
+
+    <menuitem id="menu_committee_dashboard"
+        name="Committee Dashboard"
+        parent="insurance_core.menu_insurance_root"
+        action="action_committee_dashboard"
+        groups="insurance_core.group_insurance_committee" />
+</odoo>

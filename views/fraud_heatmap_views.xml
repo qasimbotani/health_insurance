@@ -1,0 +1,28 @@
+<odoo>
+
+    <record id="view_fraud_heatmap_tree" model="ir.ui.view">
+        <field name="name">insurance.fraud.heatmap.tree</field>
+        <field name="model">insurance.fraud.heatmap</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="avg_fraud_score &gt;= 50">
+                <field name="service_id" />
+                <field name="provider_id" />
+                <field name="claim_count" />
+                <field name="avg_fraud_score" />
+            </list>
+        </field>
+    </record>
+
+    <record id="action_fraud_heatmap" model="ir.actions.act_window">
+        <field name="name">Fraud Heatmap</field>
+        <field name="res_model">insurance.fraud.heatmap</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <menuitem id="menu_fraud_heatmap"
+        name="Fraud Heatmap"
+        parent="insurance_core.menu_insurance_root"
+        action="action_fraud_heatmap"
+        groups="insurance_core.group_insurance_manager" />
+
+</odoo>

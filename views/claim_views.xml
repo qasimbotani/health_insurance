@@ -7,15 +7,20 @@
         <field name="name">insurance.claim.tree</field>
         <field name="model">insurance.claim</field>
         <field name="arch" type="xml">
-            <list decoration-danger="fraud_flag" decoration-warning="is_overdue">
-                <field name="name"/>
-                <field name="member_id"/>
-                <field name="provider_id"/>
-                <field name="claimed_amount"/>
-                <field name="approved_amount"/>
-                <field name="state"/>
-                <field name="sla_deadline"/>
-                <field name="is_overdue"/>
+            <list decoration-danger="fraud_flag"
+                decoration-warning="is_overdue"
+                decoration-info="escalation_level == 'committee'">
+                <field name="name" />
+                <field name="member_id" />
+                <field name="provider_id" />
+                <field name="claimed_amount" />
+                <field name="approved_amount" />
+                <field name="state" />
+                <field name="escalation_level" />
+                <field name="sla_deadline" />
+                <field name="sla_remaining_hours" />
+                <field name="sla_status" />
+                <field name="is_overdue" />
             </list>
         </field>
     </record>
@@ -28,27 +33,25 @@
         <field name="model">insurance.claim</field>
         <field name="arch" type="xml">
             <search string="Search Claims">
+                <filter name="filter_draft" string="Draft" domain="[('state','=','draft')]" />
+                <filter name="filter_submitted" string="Submitted"
+                    domain="[('state','=','submitted')]" />
+                <filter name="filter_returned" string="Returned" domain="[('state','=','returned')]" />
+                <filter name="filter_approved" string="Approved" domain="[('state','=','approved')]" />
+                <filter name="filter_rejected" string="Rejected" domain="[('state','=','rejected')]" />
 
-                <filter name="filter_draft" string="Draft" domain="[('state','=','draft')]"/>
+                <separator />
 
-                <filter name="filter_submitted" string="Submitted" domain="[('state','=','submitted')]"/>
+                <filter name="filter_fraud" string="Fraud Flagged"
+                    domain="[('fraud_flag','=',True)]" />
+                <filter name="filter_committee" string="Committee Review"
+                    domain="[('escalation_level','=','committee')]" />
+                <filter name="filter_overdue" string="Overdue"
+                    domain="[('is_overdue','=',True)]" />
 
-                <filter name="filter_returned" string="Returned" domain="[('state','=','returned')]"/>
-
-                <filter name="filter_approved" string="Approved" domain="[('state','=','approved')]"/>
-
-                <filter name="filter_rejected" string="Rejected" domain="[('state','=','rejected')]"/>
-
-                <separator/>
-
-                <filter name="filter_fraud" string="Fraud Flagged" domain="[('fraud_flag','=',True)]"/>
-
-                <filter name="filter_overdue" string="Overdue" domain="[('is_overdue','=',True)]"/>
-
-                <field name="member_id"/>
-                <field name="provider_id"/>
-                <field name="service_id"/>
-
+                <field name="member_id" />
+                <field name="provider_id" />
+                <field name="service_id" />
             </search>
         </field>
     </record>
@@ -64,25 +67,51 @@
 
                 <!-- ================= HEADER ================= -->
                 <header>
-                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,returned,approved,rejected"/>
+                    <field name="state" widget="statusbar"
+                        statusbar_visible="draft,submitted,returned,approved,rejected" />
 
-                    <button name="action_submit" type="object" string="Submit" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_submit" type="object"
+                        string="Submit" class="btn-primary"
+                        invisible="state != 'draft'" />
 
-                    <button name="action_approve" type="object" string="Approve" class="btn-success" invisible="state != 'submitted' or escalation_level == 'committee'"/>
+                    <button name="action_approve" type="object"
+                        string="Approve" class="btn-success"
+                        invisible="state != 'submitted' or escalation_level == 'committee'" />
 
-                    <button name="action_reject" type="object" string="Reject" class="btn-danger" invisible="state != 'submitted'"/>
+                    <button name="action_reject" type="object"
+                        string="Reject" class="btn-danger"
+                        invisible="state != 'submitted'" />
 
-                    <button name="action_flag_fraud" type="object" string="Flag Fraud" class="btn-danger" invisible="fraud_flag"/>
+                    <button name="action_flag_fraud" type="object"
+                        string="Flag Fraud" class="btn-danger"
+                        invisible="fraud_flag" />
 
-                    <button name="action_clear_fraud" type="object" string="Clear Fraud Flag" class="btn-secondary" invisible="not fraud_flag" groups="insurance_core.group_insurance_manager"/>
+                    <button name="action_clear_fraud" type="object"
+                        string="Clear Fraud Flag" class="btn-secondary"
+                        invisible="not fraud_flag"
+                        groups="insurance_core.group_insurance_manager" />
 
-                    <button name="action_return_for_correction" type="object" string="Return for Correction" class="btn-warning" invisible="state != 'submitted'" groups="insurance_core.group_insurance_manager"/>
+                    <button name="action_return_for_correction" type="object"
+                        string="Return for Correction" class="btn-warning"
+                        invisible="state != 'submitted'"
+                        groups="insurance_core.group_insurance_manager" />
 
-                    <button name="action_resubmit" type="object" string="Resubmit" class="btn-primary" invisible="state != 'returned'"/>
+                    <button name="action_resubmit" type="object"
+                        string="Resubmit" class="btn-primary"
+                        invisible="state != 'returned'" />
 
-                    <button name="action_create_payment" type="object" string="Create Payment" class="btn-primary" invisible="state != 'approved' or payment_state != 'not_paid'"/>
-                    <button name="action_override_approve" type="object" string="Override Approve" class="btn-danger" groups="insurance_core.group_insurance_gm,insurance_core.group_insurance_committee" invisible="state != 'submitted' or override_used" />
+                    <button name="action_create_payment" type="object"
+                        string="Create Payment" class="btn-primary"
+                        invisible="state != 'approved' or payment_state != 'not_paid'" />
 
+                    <button name="action_override_approve" type="object"
+                        string="Override Approve" class="btn-danger"
+                        groups="insurance_core.group_insurance_gm,insurance_core.group_insurance_committee"
+                        invisible="state != 'submitted' or override_used" />
+
+                    <button name="action_check_accounting" type="object"
+                        string="Check Accounting" class="btn-secondary"
+                        invisible="state != 'submitted'" />
                 </header>
 
                 <sheet>
@@ -90,20 +119,20 @@
                     <!-- ================= BASIC INFO ================= -->
                     <group>
                         <group>
-                            <field name="name" readonly="1"/>
-                            <field name="member_id" readonly="state != 'draft'"/>
-                            <field name="provider_id" readonly="state not in ('draft','returned')"/>
-                            <field name="service_id" readonly="state not in ('draft','returned')"/>
-                            <field name="company_id" readonly="state not in ('draft','returned')"/>
+                            <field name="name" readonly="1" />
+                            <field name="member_id" readonly="state != 'draft'" />
+                            <field name="provider_id" readonly="state not in ('draft','returned')" />
+                            <field name="service_id" readonly="state not in ('draft','returned')" />
+                            <field name="company_id" readonly="state not in ('draft','returned')" />
                         </group>
-
                         <group>
-                            <field name="claimed_amount" readonly="state not in ('draft','returned')"/>
-                            <field name="approved_amount" readonly="state not in ('draft','returned')"/>
+                            <field name="claimed_amount"
+                                readonly="state not in ('draft','returned')" />
+                            <field name="approved_amount"
+                                readonly="state not in ('draft','returned')" />
                         </group>
-
                         <group string="Return Reason" invisible="state != 'returned'">
-                            <field name="return_reason" readonly="state != 'returned'"/>
+                            <field name="return_reason" readonly="state != 'returned'" />
                         </group>
                     </group>
 
@@ -114,24 +143,28 @@
                         <page string="Approval">
                             <group>
                                 <group>
-                                    <field name="approval_level" readonly="1"/>
-                                    <field name="manager_approval_limit" readonly="1"/>
-                                    <field name="approved_by" readonly="1"/>
-                                    <field name="approved_date" readonly="1"/>
+                                    <field name="approval_level" readonly="1" />
+                                    <field name="manager_approval_limit" readonly="1" />
+                                    <field name="approved_by" readonly="1" />
+                                    <field name="approved_date" readonly="1" />
                                 </group>
-                                <group string="Override Justification" invisible="not override_used and not state == 'submitted'">
-                                    <field name="override_reason" placeholder="Mandatory reason for override..." nolabel="1"/>
+
+                                <group string="Override Justification"
+                                    invisible="not override_used and state != 'submitted'">
+                                    <field name="override_reason"
+                                        placeholder="Mandatory reason for override..."
+                                        nolabel="1" />
                                 </group>
 
                                 <group string="Payment">
-                                    <field name="payee_type"/>
-                                    <field name="payment_state" readonly="1"/>
-                                    <field name="payment_id" readonly="1"/>
+                                    <field name="payee_type" />
+                                    <field name="payment_state" readonly="1" />
+                                    <field name="payment_id" readonly="1" />
                                 </group>
 
                                 <group string="Escalation">
-                                    <field name="escalation_level" readonly="1"/>
-                                    <field name="committee_required" readonly="1"/>
+                                    <field name="escalation_level" readonly="1" />
+                                    <field name="committee_required" readonly="1" />
                                 </group>
                             </group>
                         </page>
@@ -139,50 +172,57 @@
                         <!-- ===== MEDICAL COMMITTEE ===== -->
                         <page string="Medical Committee" invisible="not committee_required">
 
-                            <group>
-                                <field name="committee_decision" readonly="1"/>
-                                <field name="committee_notes"/>
+                            <group string="Fraud Context">
+                                <field name="fraud_score" readonly="1" />
+                                <field name="fraud_reason" readonly="1" />
                             </group>
 
-                            <footer>
-                                <button name="action_committee_approve" type="object" string="Committee Approve" class="btn-success" invisible="state != 'submitted'" groups="insurance_core.group_insurance_committee"/>
+                            <group string="Voting Status"
+                                groups="insurance_core.group_insurance_committee">
+                                <field name="committee_approved_count" readonly="1" />
+                                <field name="committee_rejected_count" readonly="1" />
+                                <field name="committee_quorum" readonly="1" />
+                            </group>
 
-                                <button name="action_committee_reject" type="object" string="Committee Reject" class="btn-danger" invisible="state != 'submitted'" groups="insurance_core.group_insurance_committee"/>
-                            </footer>
+                            <group string="Committee Voting"
+                                groups="insurance_core.group_insurance_committee"
+                                invisible="committee_has_voted">
+
+                                <button name="action_committee_vote_approve"
+                                    string="Vote Approve"
+                                    type="object"
+                                    class="btn-success" />
+
+                                <button name="action_committee_vote_reject"
+                                    string="Vote Reject"
+                                    type="object"
+                                    class="btn-danger" />
+
+                            </group>
+
                         </page>
-
                         <!-- ===== REINSURANCE ===== -->
                         <page string="Reinsurance">
                             <group>
-                                <field name="reinsurance_contract_id" readonly="1"/>
-                                <field name="insurer_share" readonly="1"/>
-                                <field name="reinsurer_share" readonly="1"/>
-                            </group>
-                        </page>
-
-                        <!-- ===== FRAUD ===== -->
-                        <page string="Fraud Assessment">
-                            <group>
-                                <field name="fraud_score" readonly="1"/>
-                                <field name="fraud_flag" readonly="1"/>
-                                <field name="fraud_reason" readonly="1"/>
+                                <field name="reinsurance_contract_id" readonly="1" />
+                                <field name="insurer_share" readonly="1" />
+                                <field name="reinsurer_share" readonly="1" />
                             </group>
                         </page>
 
                         <!-- ===== SLA ===== -->
                         <page string="SLA">
                             <group>
-                                <field name="sla_deadline" readonly="1"/>
-                                <field name="is_overdue" readonly="1"/>
+                                <field name="sla_deadline" readonly="1" />
+                                <field name="is_overdue" readonly="1" />
                             </group>
                         </page>
 
                     </notebook>
-
                 </sheet>
 
                 <!-- ================= CHATTER ================= -->
-                <chatter/>
+                <chatter />
 
             </form>
         </field>
@@ -204,7 +244,7 @@
         <field name="name">Claims</field>
         <field name="res_model">insurance.claim</field>
         <field name="view_mode">list,form</field>
-        <field name="search_view_id" ref="view_claim_search"/>
+        <field name="search_view_id" ref="view_claim_search" />
     </record>
 
 </odoo>

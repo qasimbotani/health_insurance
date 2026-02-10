@@ -8,10 +8,10 @@
         <field name="model">insurance.policy</field>
         <field name="arch" type="xml">
             <list>
-                <field name="name"/>
-                <field name="annual_limit"/>
-                <field name="manager_approval_limit"/>
-                <field name="active"/>
+                <field name="name" />
+                <field name="state" />
+                <field name="annual_limit" />
+                <field name="manager_approval_limit" />
             </list>
         </field>
     </record>
@@ -25,62 +25,67 @@
         <field name="arch" type="xml">
             <form string="Insurance Policy">
 
+                <!-- ================= HEADER ================= -->
                 <header>
-                    <field name="state" widget="statusbar" statusbar_visible="draft,active,expired"/>
+                    <field name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,active,expiring,expired" />
 
-                    <button name="action_activate" type="object" string="Activate" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_activate"
+                        type="object"
+                        string="Activate"
+                        class="btn-primary"
+                        invisible="state != 'draft'" />
                 </header>
 
                 <sheet>
 
-                    <!-- SMART BUTTONS -->
-                    <div class="oe_button_box" name="button_box">
-                        <button type="action" name="%(action_policy_coverage_utilization)d" class="oe_stat_button" icon="fa-chart-pie">
-                            <field name="coverage_count" widget="statinfo" string="Coverage Usage"/>
-                        </button>
-                    </div>
-
+                    <!-- ================= BASIC INFO ================= -->
                     <group>
                         <group>
-                            <field name="name"/>
-                            <field name="company_id"/>
-                        </group>
-
-                        <group string="Coverage">
-                            <field name="coverage_template_id"/>
+                            <field name="name" />
+                            <field name="member_id" />
+                            <field name="company_id" />
                         </group>
 
                         <group>
-                            <field name="annual_limit"/>
-                            <field name="manager_approval_limit"/>
+                            <field name="annual_limit" />
+                            <field name="manager_approval_limit" />
                         </group>
                     </group>
 
                     <group>
-                        <field name="start_date"/>
-                        <field name="end_date"/>
+                        <field name="start_date" />
+                        <field name="end_date" />
+                        <field name="days_to_expiry" readonly="1" />
                     </group>
-                    <div class="oe_button_box" name="button_box">
-                        <button type="action" name="%(action_policy_coverage_utilization)d" class="oe_stat_button" icon="fa-chart-pie">
-                            <span class="o_stat_text">Coverage Usage</span>
-                        </button>
-                    </div>
 
+                    <!-- ================= NOTEBOOK ================= -->
                     <notebook>
+
+                        <!-- ===== COVERAGE ===== -->
                         <page string="Coverage">
+                            <group>
+                                <field name="coverage_template_id" />
+                            </group>
+
                             <field name="coverage_line_ids">
-                                <list editable="bottom">
-                                    <field name="service_id"/>
-                                    <field name="covered"/>
-                                    <field name="annual_limit"/>
-                                    <field name="per_claim_limit"/>
-                                    <field name="copay_percentage"/>
+                                <list>
+                                    <field name="service_id" />
+                                    <field name="covered" />
+                                    <field name="annual_limit" />
+                                    <field name="per_claim_limit" />
+                                    <field name="copay_percentage" />
                                 </list>
                             </field>
                         </page>
+
                     </notebook>
 
                 </sheet>
+
+                <chatter />
+
             </form>
         </field>
     </record>
