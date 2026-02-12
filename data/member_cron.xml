@@ -1,0 +1,21 @@
+<odoo>
+    <record id="ir_cron_auto_suspend_members" model="ir.cron">
+        <field name="name">Auto Suspend Unpaid Members</field>
+        <field name="model_id" ref="model_insurance_member" />
+        <field name="state">code</field>
+        <field name="code">model.cron_auto_suspend_unpaid_members()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active">True</field>
+    </record>
+    <record id="ir_cron_member_doc_reminder" model="ir.cron">
+        <field name="name">Member: Underwriting Reminder</field>
+        <field name="model_id" ref="model_insurance_member" />
+        <field name="state">code</field>
+        <field name="code">model.cron_remind_missing_documents()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active">True</field>
+    </record>
+
+</odoo>

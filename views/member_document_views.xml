@@ -1,0 +1,16 @@
+<odoo>
+
+    <record id="view_member_document_list" model="ir.ui.view">
+        <field name="name">insurance.member.document.list</field>
+        <field name="model">insurance.member.document</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="member_id" />
+                <field name="document_type" />
+                <field name="verified" />
+                <field name="verified_by" />
+            </list>
+        </field>
+    </record>
+
+</odoo>

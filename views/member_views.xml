@@ -1,56 +1,155 @@
 <odoo>
+
+    <!-- ===================================== -->
     <!-- MEMBER LIST -->
+    <!-- ===================================== -->
     <record id="view_member_list" model="ir.ui.view">
         <field name="name">insurance.member.list</field>
         <field name="model">insurance.member</field>
         <field name="arch" type="xml">
-            <list>
-                <field name="name"/>
-                <field name="company_id"/>
-
-                <field name="policy_id"/>
-                <field name="total_claimed"/>
+            <list decoration-danger="state == 'suspended'"
+                decoration-warning="payment_status == 'overdue'">
+                <field name="member_number" />
+                <field name="name" />
+                <field name="policy_id" />
+                <field name="state" />
+                <field name="risk_score" />
+                <field name="risk_level" />
+                <field name="payment_status" />
+                <field name="total_claimed" />
             </list>
         </field>
     </record>
 
+
+    <!-- ===================================== -->
     <!-- MEMBER FORM -->
+    <!-- ===================================== -->
     <record id="view_member_form" model="ir.ui.view">
         <field name="name">insurance.member.form</field>
         <field name="model">insurance.member</field>
         <field name="arch" type="xml">
             <form string="Insured Member">
+
+                <!-- HEADER -->
+                <header>
+
+                    <field name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,pending_documents,approved,active,suspended,terminated" />
+
+                    <button name="action_submit_for_review"
+                        type="object"
+                        string="Submit"
+                        class="btn-primary"
+                        invisible="state != 'draft'" />
+
+                    <button name="action_approve"
+                        type="object"
+                        string="Underwriting Approve"
+                        class="btn-success"
+                        groups="insurance_core.group_underwriter"
+                        invisible="state != 'pending_documents'" />
+
+                    <button name="action_activate"
+                        type="object"
+                        string="Activate"
+                        class="btn-success"
+                        invisible="state != 'approved'" />
+
+                    <button name="action_suspend"
+                        type="object"
+                        string="Suspend"
+                        class="btn-warning"
+                        invisible="state != 'active'" />
+
+                    <button name="action_terminate"
+                        type="object"
+                        string="Terminate"
+                        class="btn-danger"
+                        invisible="state == 'terminated'" />
+
+                </header>
+
+
                 <sheet>
 
-                    <!-- SMART BUTTON -->
+                    <!-- SMART BUTTONS -->
                     <div class="oe_button_box" name="button_box">
-                        <button type="action" name="%(action_member_claims)d" class="oe_stat_button" icon="fa-file-medical">
-                            <field name="total_claimed" widget="statinfo" string="Total Claimed"/>
+
+                        <button type="action"
+                            name="%(action_member_claims)d"
+                            class="oe_stat_button"
+                            icon="fa-file-medical">
+                            <field name="total_claimed"
+                                widget="statinfo"
+                                string="Claims" />
                         </button>
-                        <button name="action_print_welcome_pack" type="object" string="Print Welcome Pack" class="btn-primary"/>
-                        <button name="action_print_id_card" type="object" string="Print ID Card" class="btn-secondary"/>
+
+                        <button type="object"
+                            name="action_open_invoice"
+                            class="oe_stat_button"
+                            icon="fa-file-invoice-dollar"
+                            invisible="not premium_invoice_id">
+                            <field name="payment_status"
+                                widget="statinfo"
+                                string="Premium Status" />
+                        </button>
 
                     </div>
 
-                    <group>
-                        <field name="name"/>
-                        <field name="company_id"/>
-                        <field name="partner_id"/>
 
-                        <field name="policy_id"/>
-                        <field name="total_claimed" readonly="1"/>
+                    <!-- BASIC INFO -->
+                    <group>
+                        <group>
+                            <field name="member_number" readonly="1" />
+                            <field name="name" />
+                            <field name="company_id" />
+                            <field name="partner_id" />
+                            <field name="policy_id" />
+                        </group>
+
+                        <group string="Financial">
+                            <field name="payment_status" readonly="1" />
+                            <field name="premium_due_date" readonly="1" />
+                            <field name="total_claimed" readonly="1" />
+                            <field name="remaining_annual_limit" readonly="1" />
+                            <field name="utilization_percent"
+                                widget="percentpie"
+                                readonly="1" />
+                        </group>
                     </group>
-                    <group string="Utilization">
-                        <field name="remaining_annual_limit"/>
-                        <field name="utilization_percent" widget="percentpie"/>
+
+
+                    <!-- RISK -->
+                    <group string="Risk Assessment">
+                        <field name="risk_score" readonly="1" />
+                        <field name="risk_level" readonly="1" />
+                        <field name="requires_underwriter" readonly="1" />
+                    </group>
+
+
+                    <!-- UNDERWRITING DOCUMENTS -->
+                    <group string="Underwriting Documents">
+                        <field name="document_ids">
+                            <list editable="bottom">
+                                <field name="document_type" />
+                                <field name="verified" />
+                            </list>
+                        </field>
+                        <field name="underwriting_complete" readonly="1" />
                     </group>
 
                 </sheet>
+
+                <chatter />
+
             </form>
         </field>
     </record>
-
+    <!-- ===================================== -->
     <!-- MEMBER ACTION -->
+    <!-- ===================================== -->
     <record id="action_member" model="ir.actions.act_window">
         <field name="name">Members</field>
         <field name="res_model">insurance.member</field>

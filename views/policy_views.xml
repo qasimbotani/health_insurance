@@ -1,50 +1,74 @@
 <odoo>
 
-    <!-- ========================= -->
+    <!-- ===================================== -->
     <!-- POLICY LIST VIEW -->
-    <!-- ========================= -->
+    <!-- ===================================== -->
     <record id="view_policy_list" model="ir.ui.view">
         <field name="name">insurance.policy.list</field>
         <field name="model">insurance.policy</field>
         <field name="arch" type="xml">
             <list>
                 <field name="name" />
+                <field name="company_id" />
                 <field name="state" />
+                <field name="member_count" />
                 <field name="annual_limit" />
-                <field name="manager_approval_limit" />
+                <field name="premium_amount" />
+                <field name="risk_evaluation_mode" />
+                <field name="risk_threshold" />
+                <field name="start_date" />
+                <field name="end_date" />
             </list>
         </field>
     </record>
 
-    <!-- ========================= -->
+
+    <!-- ===================================== -->
     <!-- POLICY FORM VIEW -->
-    <!-- ========================= -->
+    <!-- ===================================== -->
     <record id="view_policy_form" model="ir.ui.view">
         <field name="name">insurance.policy.form</field>
         <field name="model">insurance.policy</field>
         <field name="arch" type="xml">
             <form string="Insurance Policy">
 
-                <!-- ================= HEADER ================= -->
+                <!-- HEADER -->
                 <header>
                     <field name="state"
                         widget="statusbar"
-                        statusbar_visible="draft,active,expiring,expired" />
+                        statusbar_visible="draft,active,expiring,renewal_quoted,renewed,expired,cancelled" />
 
                     <button name="action_activate"
                         type="object"
                         string="Activate"
                         class="btn-primary"
                         invisible="state != 'draft'" />
+
+                    <button name="action_cancel"
+                        type="object"
+                        string="Cancel"
+                        class="btn-danger"
+                        invisible="state in ('expired','cancelled')" />
                 </header>
 
                 <sheet>
 
-                    <!-- ================= BASIC INFO ================= -->
+                    <!-- SMART BUTTON -->
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_members"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-users">
+                            <field name="member_count"
+                                widget="statinfo"
+                                string="Members" />
+                        </button>
+                    </div>
+
+                    <!-- BASIC INFO -->
                     <group>
                         <group>
                             <field name="name" />
-                            <field name="member_id" />
                             <field name="company_id" />
                         </group>
 
@@ -54,21 +78,44 @@
                         </group>
                     </group>
 
+                    <!-- PREMIUM CONFIG -->
+                    <group string="Premium Configuration">
+                        <field name="premium_amount" />
+                        <field name="premium_income_account_id" />
+                        <field name="premium_grace_days" />
+                    </group>
+
+                    <!-- RISK CONFIG -->
+                    <group string="Risk Evaluation Settings">
+                        <field name="risk_evaluation_mode" />
+                        <field name="risk_threshold" />
+                    </group>
+
+                    <!-- PERIOD -->
                     <group>
                         <field name="start_date" />
                         <field name="end_date" />
-                        <field name="days_to_expiry" readonly="1" />
                     </group>
 
-                    <!-- ================= NOTEBOOK ================= -->
+                    <!-- NOTEBOOK -->
                     <notebook>
 
-                        <!-- ===== COVERAGE ===== -->
-                        <page string="Coverage">
-                            <group>
-                                <field name="coverage_template_id" />
-                            </group>
+                        <!-- MEMBERS TAB -->
+                        <page string="Members">
+                            <field name="member_ids">
+                                <list>
+                                    <field name="member_number" />
+                                    <field name="name" />
+                                    <field name="state" />
+                                    <field name="risk_score" />
+                                    <field name="payment_status" />
+                                </list>
+                            </field>
+                        </page>
 
+                        <!-- COVERAGE TAB -->
+                        <page string="Coverage">
+                            <field name="coverage_template_id" />
                             <field name="coverage_line_ids">
                                 <list>
                                     <field name="service_id" />
@@ -89,10 +136,9 @@
             </form>
         </field>
     </record>
-
-    <!-- ========================= -->
+    <!-- ===================================== -->
     <!-- POLICY ACTION -->
-    <!-- ========================= -->
+    <!-- ===================================== -->
     <record id="action_policy" model="ir.actions.act_window">
         <field name="name">Policies</field>
         <field name="res_model">insurance.policy</field>

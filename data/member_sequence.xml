@@ -1,0 +1,8 @@
+<odoo>
+    <record id="seq_insurance_member" model="ir.sequence">
+        <field name="name">Insurance Member</field>
+        <field name="code">insurance.member</field>
+        <field name="prefix">MEM/</field>
+        <field name="padding">5</field>
+    </record>
+</odoo>

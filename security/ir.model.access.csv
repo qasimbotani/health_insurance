@@ -28,3 +28,5 @@ access_reinsurance_bordereau_line_admin,access.reinsurance.bordereau.line.admin,
 
 access_reinsurance_settlement_admin,access.reinsurance.settlement.admin,model_insurance_reinsurance_settlement,insurance_core.group_insurance_admin,1,1,1,1
 access_claim_committee,insurance.claim.committee,model_insurance_claim,insurance_core.group_insurance_committee,1,0,0,0
+access_member_document_user,member.document.user,model_insurance_member_document,insurance_core.group_insurance_user,1,1,1,1
+access_member_document_underwriter,member.document.underwriter,model_insurance_member_document,insurance_core.group_underwriter,1,1,1,1

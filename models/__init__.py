@@ -3,6 +3,8 @@ from . import policy
 from . import policy_cron
 from . import policy_coverage_line
 from . import member
+from . import member_document
+from . import member_cron
 from . import provider
 from . import claim
 from . import claim_vote

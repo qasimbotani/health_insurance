@@ -8,12 +8,16 @@
     <!-- Insurance Manager -->
     <record id="group_insurance_manager" model="res.groups">
         <field name="name">Insurance Manager</field>
-        <field name="implied_ids" eval="[(4, ref('insurance_core.group_insurance_user'))]"/>
+        <field name="implied_ids" eval="[(4, ref('insurance_core.group_insurance_user'))]" />
     </record>
     <!-- Insurance General Manager -->
     <record id="group_insurance_gm" model="res.groups">
         <field name="name">Insurance General Manager</field>
-        <field name="implied_ids" eval="[(4, ref('insurance_core.group_insurance_manager'))]"/>
+        <field name="implied_ids" eval="[(4, ref('insurance_core.group_insurance_manager'))]" />
+    </record>
+    <record id="group_underwriter" model="res.groups">
+        <field name="name">Underwriter</field>
+
     </record>
 
 </odoo>

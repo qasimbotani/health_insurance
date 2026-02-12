@@ -14,7 +14,7 @@ class InsurancePolicy(models.Model):
     # -------------------------------------------------
 
     name = fields.Char(
-        string="Policy Number",
+        string="Policy",
         required=True,
         readonly=True,
         copy=False,
@@ -23,38 +23,92 @@ class InsurancePolicy(models.Model):
         tracking=True,
     )
 
-    member_id = fields.Many2one(
-        "insurance.member",
-        string="Policy Holder",
+    company_id = fields.Many2one(
+        "res.company",
+        string="Insurance Company",
         required=True,
+        default=lambda self: self.env.company,
         tracking=True,
     )
 
-    company_id = fields.Many2one(
-        "res.company",
-        string="Company",
+    # One Policy → Many Members
+    member_ids = fields.One2many(
+        "insurance.member",
+        "policy_id",
+        string="Covered Members",
+    )
+
+    member_count = fields.Integer(
+        compute="_compute_member_count",
+        string="Members",
+    )
+
+    # -------------------------------------------------
+    # PREMIUM CONFIGURATION
+    # -------------------------------------------------
+
+    premium_amount = fields.Monetary(
+        string="Annual Premium",
         required=True,
-        default=lambda self: self.env.company,
+        tracking=True,
+        currency_field="currency_id",
+    )
+
+    currency_id = fields.Many2one(
+        "res.currency",
+        related="company_id.currency_id",
+        readonly=True,
+        store=True,
+    )
+
+    premium_income_account_id = fields.Many2one(
+        "account.account",
+        string="Premium Income Account",
+        domain="[('account_type','=','income')]",
+        help="Revenue account for insurance premiums",
+    )
+
+    premium_grace_days = fields.Integer(
+        string="Premium Grace Period (Days)",
+        default=15,
+    )
+
+    # -------------------------------------------------
+    # UNDERWRITING RISK CONFIGURATION
+    # -------------------------------------------------
+
+    risk_evaluation_mode = fields.Selection(
+        [
+            ("none", "No Risk Evaluation"),
+            ("member", "Member Risk Only"),
+            ("policy", "Policy Risk Only"),
+            ("both", "Member + Policy"),
+        ],
+        string="Risk Evaluation Mode",
+        default="member",
+        tracking=True,
+    )
+
+    risk_threshold = fields.Float(
+        string="Risk Threshold",
+        default=50,
+        help="If member risk score exceeds this value, underwriter approval is required.",
+    )
+
+    auto_underwriter_required = fields.Boolean(
+        string="Force Underwriter Approval",
+        help="If enabled, all members require underwriter approval regardless of risk score.",
     )
 
     # -------------------------------------------------
     # POLICY PERIOD
     # -------------------------------------------------
 
-    start_date = fields.Date(
-        string="Start Date",
-        required=True,
-        tracking=True,
-    )
-
-    end_date = fields.Date(
-        string="End Date",
-        required=True,
-        tracking=True,
-    )
+    start_date = fields.Date(required=True, tracking=True)
+    end_date = fields.Date(required=True, tracking=True)
 
     # -------------------------------------------------
-    # STATE MACHINE (DIAGRAM-DRIVEN)
+    # STATE MACHINE
     # -------------------------------------------------
 
     state = fields.Selection(
@@ -67,7 +121,6 @@ class InsurancePolicy(models.Model):
             ("expired", "Expired"),
             ("cancelled", "Cancelled"),
         ],
-        string="Status",
         default="draft",
         tracking=True,
     )
@@ -76,55 +129,35 @@ class InsurancePolicy(models.Model):
     # LIMITS
     # -------------------------------------------------
 
-    annual_limit = fields.Float(
-        string="Annual Limit",
-        required=True,
-        tracking=True,
-    )
-
-    manager_approval_limit = fields.Float(
-        string="Manager Approval Limit",
-        required=True,
-        tracking=True,
-    )
+    annual_limit = fields.Float(required=True, tracking=True)
+    manager_approval_limit = fields.Float(required=True, tracking=True)
 
     # -------------------------------------------------
-    # COMPUTED FLAGS
+    # COVERAGE TEMPLATE
     # -------------------------------------------------
 
-    is_expired = fields.Boolean(
-        string="Expired",
-        compute="_compute_is_expired",
-        store=True,
+    coverage_template_id = fields.Many2one(
+        "insurance.coverage.template",
+        string="Coverage Template",
+        required=True,
     )
 
-    days_to_expiry = fields.Integer(
-        string="Days to Expiry",
-        compute="_compute_days_to_expiry",
-        store=False,
+    coverage_line_ids = fields.One2many(
+        "insurance.coverage.line",
+        related="coverage_template_id.line_ids",
+        readonly=True,
     )
 
     # -------------------------------------------------
     # COMPUTES
     # -------------------------------------------------
 
-    @api.depends("end_date")
-    def _compute_is_expired(self):
-        today = date.today()
+    def _compute_member_count(self):
         for rec in self:
-            rec.is_expired = bool(rec.end_date and rec.end_date < today)
-
-    @api.depends("end_date")
-    def _compute_days_to_expiry(self):
-        today = date.today()
-        for rec in self:
-            if rec.end_date:
-                rec.days_to_expiry = (rec.end_date - today).days
-            else:
-                rec.days_to_expiry = 0
+            rec.member_count = len(rec.member_ids)
 
     # -------------------------------------------------
-    # STATE TRANSITIONS (MANUAL)
+    # ACTIONS
     # -------------------------------------------------
 
     def action_activate(self):
@@ -136,89 +169,118 @@ class InsurancePolicy(models.Model):
                 raise ValidationError("End date must be after start date.")
 
             rec.state = "active"
-
             rec.message_post(body="✅ Policy activated.")
 
     def action_cancel(self):
         for rec in self:
-            if rec.state in ("expired", "cancelled"):
-                continue
-
             rec.state = "cancelled"
-
             rec.message_post(body="❌ Policy cancelled.")
 
     # -------------------------------------------------
-    # AUTOMATIC STATE ENFORCEMENT
+    # RENEWAL
     # -------------------------------------------------
 
-    def _auto_update_policy_state(self):
-        """
-        Enforces expiry and expiring states.
-        Called by cron.
-        """
-        today = date.today()
+    renewal_origin_id = fields.Many2one(
+        "insurance.policy",
+        string="Renewed From",
+        readonly=True,
+        copy=False,
+    )
 
+    renewal_child_id = fields.Many2one(
+        "insurance.policy",
+        string="Renewal Policy",
+        readonly=True,
+        copy=False,
+    )
+
+    def action_generate_renewal_quote(self):
         for rec in self:
-            if rec.state in ("cancelled", "expired"):
-                continue
-
-            if rec.end_date < today:
-                rec.state = "expired"
-                rec.message_post(body="⛔ Policy expired automatically.")
-                continue
-
-            days_left = (rec.end_date - today).days
-
-            if days_left <= 90 and rec.state == "active":
-                rec.state = "expiring"
-                rec.message_post(
-                    body=(
-                        "⚠️ Policy entering renewal window.<br/>"
-                        f"Days to expiry: {days_left}"
-                    )
+            if rec.state != "expiring":
+                raise ValidationError(
+                    "Renewal quotes can only be generated for expiring policies."
                 )
 
+            rec.state = "renewal_quoted"
+            rec.message_post(body="📄 Renewal quote generated.")
+
+    def action_confirm_renewal(self):
+        for rec in self:
+            if rec.state != "renewal_quoted":
+                raise ValidationError("Only renewal-quoted policies can be renewed.")
+
+            new_policy = rec.copy(
+                {
+                    "name": "New",
+                    "state": "draft",
+                    "start_date": rec.end_date + timedelta(days=1),
+                    "end_date": rec.end_date + timedelta(days=365),
+                    "renewal_origin_id": rec.id,
+                }
+            )
+
+            rec.renewal_child_id = new_policy.id
+            rec.state = "renewed"
+
+            rec.message_post(
+                body=f"🔁 Policy renewed. New Policy Created: {new_policy.name}"
+            )
+
+            new_policy.message_post(body=f"🔁 Renewal created from Policy {rec.name}")
+
     # -------------------------------------------------
-    # ORM OVERRIDES
+    # SMART BUTTON ACTION
+    # -------------------------------------------------
+
+    def action_view_members(self):
+        self.ensure_one()
+
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Policy Members",
+            "res_model": "insurance.member",
+            "view_mode": "list,form",
+            "domain": [("policy_id", "=", self.id)],
+            "context": {"default_policy_id": self.id},
+        }
+
+    # -------------------------------------------------
+    # CRON
     # -------------------------------------------------
 
     @api.model
-    def create(self, vals):
-        if vals.get("name", "New") == "New":
-            vals["name"] = (
-                self.env["ir.sequence"].next_by_code("insurance.policy") or "New"
-            )
-        return super().create(vals)
+    def cron_update_policy_states(self):
+        today = date.today()
+        policies = self.search([("state", "in", ["active", "expiring"])])
+
+        for policy in policies:
+
+            if policy.end_date and policy.end_date < today:
+                policy.state = "expired"
+                policy.message_post(body="⛔ Policy expired automatically.")
+                continue
+
+            days_left = (policy.end_date - today).days if policy.end_date else 0
+
+            if policy.state == "active" and days_left <= 90:
+                policy.state = "expiring"
+                policy.message_post(
+                    body=f"⚠️ Policy entering expiry window. {days_left} days left."
+                )
 
     # -------------------------------------------------
-    # SMART BUTTON COUNTERS
+    # SEQUENCE
     # -------------------------------------------------
 
-    coverage_count = fields.Integer(
-        string="Coverage Lines",
-        compute="_compute_coverage_count",
-        store=False,
-    )
+    @api.model
+    def create(self, vals_list):
+        if isinstance(vals_list, dict):
+            vals_list = [vals_list]
 
-    def _compute_coverage_count(self):
-        for policy in self:
-            policy.coverage_count = len(policy.coverage_line_ids)
+        for vals in vals_list:
+            if vals.get("name", "New") == "New":
+                vals["name"] = (
+                    self.env["ir.sequence"].next_by_code("insurance.policy") or "New"
+                )
 
-    # ----------------------------------
-    # COVERAGE TEMPLATE
-    # ----------------------------------
-
-    coverage_template_id = fields.Many2one(
-        "insurance.coverage.template",
-        string="Coverage Template",
-        required=True,
-        help="Defines covered services and limits for this policy",
-    )
-
-    coverage_line_ids = fields.One2many(
-        "insurance.coverage.line",
-        related="coverage_template_id.line_ids",
-        string="Coverage Lines",
-        readonly=True,
-    )
+        return super().create(vals_list)
