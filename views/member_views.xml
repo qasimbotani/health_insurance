@@ -134,6 +134,7 @@
                         <field name="document_ids">
                             <list editable="bottom">
                                 <field name="document_type" />
+                                <field name="document_name" />
                                 <field name="verified" />
                             </list>
                         </field>
